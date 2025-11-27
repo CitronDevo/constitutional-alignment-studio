@@ -1,0 +1,20 @@
+[project]
+name = "adaptive-constitutional-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-generativeai>=0.8.5",
+    "ollama>=0.6.1",
+    "openai>=1.0.0",
+    "streamlit>=1.28.0",
+    "pydantic>=2.0.0",
+    "nltk>=3.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]

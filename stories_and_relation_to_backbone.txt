@@ -1,0 +1,163 @@
+
+
+2. The User Persona
+
+The User: You (The Solutions Engineer / Prompt Engineer).The Goal: Create a "Few-Shot" training dataset.The Pain Point: Manually counting sentences and checking first letters is tedious and prone to error.
+
+3. User Stories (The UX Requirements)
+
+Here are the specific user stories that define the necessary features of your tool:
+
+Story A: The "Viewer" (Input)
+
+"As a Prompt Engineer, I want to load the dev.jsonl file so that I can see the 'Bad' responses that need fixing."
+
+UX Feature: A file loader or a dropdown menu to select one of the 20 raw conversations. Display the "Original Prompt" and the "Original (Bad) Response."
+
+Story B: The "Drafter" (The Work)
+
+"As a Prompt Engineer, I need to write a Critique and a Rewrite that forces the acronym ADAPTIVE, but doing this mentally is hard. I want a text interface to draft these."
+
+UX Feature: Two text boxes. One for "Critique" and one for "Rewrite."
+
+Nice-to-have UX: A button that says "Auto-Draft with AI" that asks GPT-4o to try its best to write it first, so you only have to edit it rather than write from scratch.
+
+Story C: The "Validator" (The Helper)
+
+"As a Prompt Engineer, I want to know immediately if my rewrite actually spells 'ADAPTIVE' correctly without counting manually."
+
+UX Feature: A real-time checker. If I type my rewrite, a visual indicator (Green Check / Red X) should tell me:
+
+Do I have exactly 8 sentences?
+
+Does sentence 1 start with A?
+
+Does sentence 2 start with D?
+
+Etc.
+
+Story D: The "Tester" (The Feedback Loop)
+
+"As a Prompt Engineer, I want to see if the example I just wrote actually helps the AI. If I feed this example to GPT-4o, does it get smarter?"
+
+UX Feature: A "Test" button. When clicked, it takes your new example, puts it into the prompt context (Few-Shot), and asks GPT-4o to answer a different prompt. You then see if GPT-4o successfully uses the ADAPTIVE format on the new task.
+
+Story E: The "Saver" (Output)
+
+"As a Prompt Engineer, once I am happy with my Critique and Rewrite, I want to save it to a file so I can submit it."
+
+UX Feature: A "Save to JSON" button that appends your approved example to a file.
+
+
+
+if not, please provide adjustment so that it works with all of these
+
+Yes, the "Gym" architecture structure (Builder View + Tester View) is perfectly aligned with these User Stories. In fact, it organizes them better than a single-page app would, because it separates the "Work" (Stories A, B, C, E) from the "Proof" (Story D).
+
+Here is the exact mapping of User Story → Repository File, confirming that every requirement has a home.
+
+1. Mapping Stories to the New Architecture
+User Story	Component / File	How it works in this Repo
+A: The Viewer
+
+
+(Load & See Bad Responses)
+
+ui/builder_view.py
+
+
+src/repository.py
+
+The Sidebar in Tab 1 calls repository.get_next_untrained_task(). It displays the "Original Bad Response" in the main drafting area.
+B: The Drafter
+
+
+(Draft Critique/Rewrite)
+
+ui/builder_view.py
+
+
+src/prompt_engine.py
+
+The Main Area in Tab 1 has the text areas. The "Auto-Draft" button calls llm_client to pre-fill them using the INITIAL_RESPONSE logic.
+C: The Validator
+
+
+(Real-time Check)
+
+src/validator.py
+
+
+ui/components.py
+
+builder_view.py imports render_acrostic_check. As you type in the "Rewrite" box, this component updates in real-time to show the vertical A-D-A-P-T-I-V-E status.
+D: The Tester
+
+
+(Feedback Loop)
+
+ui/tester_view.py
+
+
+(Tab 2)
+
+This is the Exam Room. Once you save an example in Tab 1, you switch to Tab 2. It grabs an unseen task and runs it with your new example in the prompt context.
+E: The Saver
+
+
+(Output to File)
+
+src/repository.py
+
+
+ui/builder_view.py
+
+The "Save" button in Tab 1 calls repository.upsert_example(). It writes to data/output/golden_examples.json.
+2. The One UX Adjustment Needed (For Flow)
+The only friction point in the "Gym" architecture is between Story E (Save) and Story D (Test).
+
+Current Flow: Draft → Save → Click Tab 2 → Run Test.
+
+Risk: The user might feel "disconnected" from the test result because they have to change tabs.
+
+The Fix: Add a "Quick Verify" feature inside Tab 1.
+
+While Tab 2 is for "Rigorous Testing" (the Final Exam), you can add a lightweight check in Tab 1 to satisfy Story D immediately.
+
+Update ui/builder_view.py with this logic:
+
+"After the user clicks 'Save', show a success message and a new button: '⚡ Quick Sanity Check'. Clicking this grabs ONE random unseen task and runs it immediately in a popup/expander, just to give that instant dopamine hit that the example works."
+
+3. Updated File Structure Logic
+Here is the final confirmation of what goes where to satisfy your stories.
+
+ui/builder_view.py (The Workbench)
+Responsibility: Stories A, B, C, E (and "Quick" D).
+
+UI Elements:
+
+Dropdown: "Select Task (Bill #12588)" (Story A)
+
+Button: "✨ Auto-Draft" (Story B)
+
+Text Areas: Critique & Rewrite (Story B)
+
+Visual: Acrostic Validator (Green/Red) (Story C)
+
+Button: "💾 Save to Training Pool" (Story E)
+
+New: Expander: "⚡ Quick Verification (Run on random task)" (Story D - Lite)
+
+ui/tester_view.py (The Exam Room)
+Responsibility: Deep dive on Story D.
+
+UI Elements:
+
+Selector: "Select specific Test Case"
+
+Split View: "Zero-Shot (No help)" vs "Few-Shot (With your saved examples)"
+
+This validates that your collection of examples is working, not just the single one you wrote.
+
+Conclusion
+You do not need to change the architecture. It fits perfectly. You just need to make sure the Tester View (Tab 2) is easy to access so the user gets that satisfying "Feedback Loop" (Story D).
