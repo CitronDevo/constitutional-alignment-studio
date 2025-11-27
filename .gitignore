@@ -25,3 +25,6 @@ ngrok.log
 
 # Temporary/local helpers
 testgoogle.py
+main.py
+stories_and_relation_to_backbone.txt
+uv.lock
